@@ -14,8 +14,8 @@ from gesturevision.effects.engine import EffectEngine
 from gesturevision.gesture_recognition.recognizer import GestureRecognizer
 from gesturevision.input.finger_controller import FingerController
 from gesturevision.performance.fps_counter import FpsCounter
-from gesturevision.core.types import GestureType
 from gesturevision.effects.interactive.image_reveal import ImageRevealEffect
+from gesturevision.effects.interactive.hand_mesh_renderer import draw_dual_hand_mesh
 from gesturevision.utils.image_utils import (
     draw_finger_cursor,
     draw_hand_landmarks,
@@ -37,6 +37,7 @@ class FramePipeline:
         *,
         mirror_preview: bool = True,
         fps_counter: FpsCounter | None = None,
+        auto_hand_mesh: bool = False,
     ) -> None:
         self._tracker = hand_tracker
         self._finger_controller = finger_controller
@@ -45,6 +46,7 @@ class FramePipeline:
         self._mirror_preview = mirror_preview
         self._fps_counter = fps_counter or FpsCounter()
         self._last_capture_timestamp = 0.0
+        self._auto_hand_mesh = auto_hand_mesh
 
     @property
     def effect_engine(self) -> EffectEngine:
@@ -58,6 +60,9 @@ class FramePipeline:
         self._mirror_preview = enabled
         # Frame is mirrored before tracking — landmarks are already in display space.
         self._finger_controller.set_mirror(not enabled)
+
+    def set_auto_hand_mesh(self, enabled: bool) -> None:
+        self._auto_hand_mesh = enabled
 
     def process(self, frame: Frame) -> ProcessedFrame | None:
         """Run one pipeline iteration and return a render-ready frame."""
@@ -93,12 +98,17 @@ class FramePipeline:
             pixel_position=pixel_cursor,
             active_gesture=debounce_result.display_gesture,
             pinch_strength=pinch_strength,
+            hands=hands,
         )
         effect_ms = (time.perf_counter() - effect_start) * 1000.0
 
         output = effected.copy()
-        hide_landmarks = self._effect_engine.active_effect == "brush"
-        if hands and not hide_landmarks:
+        active_effect = self._effect_engine.active_effect
+        mesh_overlay = self._auto_hand_mesh and len(hands) >= 2 and active_effect == "original"
+        hide_landmarks = active_effect in {"brush", "hand_mesh"} or mesh_overlay
+        if mesh_overlay and hands:
+            draw_dual_hand_mesh(output, hands)
+        elif hands and not hide_landmarks:
             draw_hand_landmarks(output, hands)
         if debounce_result.display_gesture in (
             GestureType.INDEX_FINGER,

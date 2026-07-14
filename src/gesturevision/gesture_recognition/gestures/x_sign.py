@@ -9,8 +9,10 @@ from gesturevision.gesture_recognition.finger_geometry import (
 from gesturevision.hand_tracking import landmarks as lm
 
 
-class PeaceRule:
-    gesture = GestureType.PEACE
+class XSignRule:
+    """Index and middle fingers crossed — means done / cancel / exit paint."""
+
+    gesture = GestureType.X_SIGN
 
     def evaluate(self, hand: HandResult) -> float:
         points = hand.landmarks
@@ -22,10 +24,10 @@ class PeaceRule:
             return 0.0
         if not is_finger_curled(points, lm.PINKY_TIP, lm.PINKY_PIP):
             return 0.0
-        # Wide V = peace. Crossed fingers = X sign.
-        if fingertip_distance(points, lm.INDEX_TIP, lm.MIDDLE_TIP) < 0.07:
+        # Crossed fingers — tips close together (peace/V has wide separation).
+        if fingertip_distance(points, lm.INDEX_TIP, lm.MIDDLE_TIP) > 0.055:
             return 0.0
-        return 0.92 * hand.confidence
+        return 0.94 * hand.confidence
 
 
-rule = PeaceRule()
+rule = XSignRule()

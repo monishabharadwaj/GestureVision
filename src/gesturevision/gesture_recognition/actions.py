@@ -27,6 +27,8 @@ class ActionType(str, Enum):
     START_MUSIC_CHAT = "start_music_chat"
     START_LEARN_CHAT = "start_learn_chat"
     START_FREE_CHAT = "start_free_chat"
+    ENTER_PAINT_MODE = "enter_paint_mode"
+    EXIT_PAINT_MODE = "exit_paint_mode"
 
 
 CONTINUOUS_ACTIONS = frozenset({ActionType.TRACK_CURSOR, ActionType.ADJUST_PARAMETER})

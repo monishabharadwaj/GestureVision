@@ -6,7 +6,9 @@ import logging
 import sys
 from typing import Any
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QFont, QPixmap
+from PyQt6.QtWidgets import QApplication, QSplashScreen
 
 from gesturevision import __app_name__, __version__
 from gesturevision.accessibility.feedback_manager import FeedbackManager
@@ -46,7 +48,7 @@ class Application:
             relative = app_cfg.get("paths", {}).get(key, key)
             self.config_loader.resolve_path(relative).mkdir(parents=True, exist_ok=True)
 
-        logger.info("%s v%s initializing (Phase 5)", __app_name__, __version__)
+        logger.info("%s v%s initializing (Phase 8)", __app_name__, __version__)
         logger.info("Project root: %s", self.project_root)
 
     def _resolve_startup_profile(self) -> AccessibilityProfile:
@@ -87,6 +89,11 @@ class Application:
             self.configs["app"].get("organization", "GestureVision")
         )
 
+        splash = self._create_splash()
+        if splash is not None:
+            splash.show()
+            self.qt_app.processEvents()
+
         self.profile = self._resolve_startup_profile()
         profile_settings = load_profile_settings(self.configs["accessibility"], self.profile)
 
@@ -107,6 +114,8 @@ class Application:
         self.main_window.set_feedback_manager(self.feedback_manager)
 
         self.main_window.show()
+        if splash is not None:
+            splash.finish(self.main_window)
         self.feedback_manager.announce_welcome()
         self.main_window.begin_accessibility_session()
 
@@ -115,7 +124,7 @@ class Application:
                 type=EventType.APP_STARTED,
                 payload={
                     "version": __version__,
-                    "phase": 5,
+                    "phase": 8,
                     "profile": self.profile.value,
                 },
             )
@@ -127,13 +136,29 @@ class Application:
             )
         )
         logger.info(
-            "Application started — Phase 5 accessibility (%s mode)",
+            "Application started — Phase 8 picture mode (%s mode)",
             self.profile.value,
         )
 
         exit_code = self.qt_app.exec()
         self.shutdown()
         return exit_code
+
+    def _create_splash(self) -> QSplashScreen | None:
+        if not self.configs.get("accessibility", {}).get("accessibility", {}).get(
+            "show_splash", True
+        ):
+            return None
+        pixmap = QPixmap(480, 200)
+        pixmap.fill(QColor("#000000"))
+        splash = QSplashScreen(pixmap)
+        splash.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        splash.showMessage(
+            f"{__app_name__}\nPhase 8 · Picture / ASL Mode\nLoading accessibility…",
+            Qt.AlignmentFlag.AlignCenter,
+            QColor("#ffffff"),
+        )
+        return splash
 
     def shutdown(self) -> None:
         """Publish shutdown and clear the event bus."""

@@ -8,10 +8,15 @@ import numpy as np
 from gesturevision.core.types import BGRImage, EffectContext
 from gesturevision.effects.interactive.base import InteractiveEffect
 from gesturevision.effects.interactive.brush_renderers import (
+    BRUSH_COLOR_PRESETS,
     BRUSH_TYPES,
     finalize_glow,
 )
 from gesturevision.effects.interactive.paint_stickers import STICKER_CYCLE, STICKER_RENDERERS
+
+
+INK_CYCLE: tuple[str, ...] = tuple(BRUSH_COLOR_PRESETS.keys())
+BACKGROUND_CYCLE: tuple[str, ...] = ("original", "sketch", "edge")
 
 
 class VirtualBrushEffect(InteractiveEffect):
@@ -42,12 +47,14 @@ class VirtualBrushEffect(InteractiveEffect):
         self._last_pixel: tuple[int, int] | None = None
         self._stickers: list[dict[str, object]] = []
         self._next_sticker = 0
+        self._ink_index = 0
 
     def reset(self) -> None:
         self._glow_layer = None
         self._last_pixel = None
         self._stickers.clear()
         self._next_sticker = 0
+        self._ink_index = 0
 
     def set_brush_type(self, brush_type: str) -> None:
         if brush_type in BRUSH_TYPES:
@@ -72,6 +79,31 @@ class VirtualBrushEffect(InteractiveEffect):
         next_type = order[(index + 1) % len(order)]
         self.set_brush_type(next_type)
         return next_type
+
+    def cycle_ink_color(self) -> tuple[str, tuple[int, int, int]]:
+        if not INK_CYCLE:
+            return "neon_pink", (255, 80, 255)
+        self._ink_index = (self._ink_index + 1) % len(INK_CYCLE)
+        name = INK_CYCLE[self._ink_index]
+        color = BRUSH_COLOR_PRESETS[name]
+        self.set_color(color)
+        return name, color
+
+    def cycle_background_filter(self) -> str:
+        current = str(self.params.get("background_filter", "original"))
+        try:
+            index = BACKGROUND_CYCLE.index(current)
+        except ValueError:
+            index = -1
+        next_filter = BACKGROUND_CYCLE[(index + 1) % len(BACKGROUND_CYCLE)]
+        self.set_background_filter(next_filter)
+        return next_filter
+
+    def clear_canvas(self) -> None:
+        """Clear paint strokes but stay in paint mode."""
+        self._glow_layer = None
+        self._last_pixel = None
+        self._stickers.clear()
 
     def place_sticker(self, position: tuple[int, int] | None) -> str:
         if position is None:

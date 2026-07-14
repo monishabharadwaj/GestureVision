@@ -25,6 +25,7 @@ class GestureType(str, Enum):
     CLOSED_FIST = "closed_fist"
     ROCK_SIGN = "rock_sign"
     PINCH = "pinch"
+    X_SIGN = "x_sign"
     UNKNOWN = "unknown"
 
 
@@ -86,6 +87,7 @@ class EffectContext:
     pinch_strength: float = 0.0
     params: dict[str, Any] = field(default_factory=dict)
     quality: QualityTier = "preview"
+    hands: list[HandResult] = field(default_factory=list)
 
 
 @dataclass(slots=True)

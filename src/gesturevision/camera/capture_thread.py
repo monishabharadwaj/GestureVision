@@ -27,15 +27,25 @@ class CaptureThread(threading.Thread):
         self._buffer = buffer
         self._stop_event = stop_event
         self._frame_index = 0
+        self._local_failures = 0
 
     def run(self) -> None:
         logger.info("Capture thread started")
         while not self._stop_event.is_set():
             ok, data = self._camera.read_raw()
             if not ok or data is None:
-                time.sleep(0.01)
+                self._local_failures += 1
+                if self._camera.needs_reconnect():
+                    if not self._camera.reconnect():
+                        time.sleep(0.5)
+                    self._local_failures = 0
+                else:
+                    # Back off so OpenCV does not flood the console with MSMF warnings.
+                    delay = min(0.2, 0.01 * self._local_failures)
+                    time.sleep(delay)
                 continue
 
+            self._local_failures = 0
             frame = Frame(
                 data=data,
                 timestamp=time.perf_counter(),

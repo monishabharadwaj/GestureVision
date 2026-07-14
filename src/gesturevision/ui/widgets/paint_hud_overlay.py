@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Small paint-studio status bar — shows brush/filter without blocking the camera."""
+"""Paint studio HUD — brush status + always-visible EXIT (X) cue."""
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
@@ -15,10 +15,16 @@ class PaintHudOverlay(QWidget):
         self.hide()
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 6, 10, 10)
+        layout.setContentsMargins(10, 4, 10, 8)
         layout.setSpacing(4)
 
-        self._status = QLabel("PAINT STUDIO — show ☝ index finger to draw on your face")
+        self._exit = QLabel("❌ CROSS FINGERS (X) = EXIT PAINT  ·  👊 FIST = CLEAR")
+        self._exit.setObjectName("PaintExitBanner")
+        self._exit.setWordWrap(True)
+        self._exit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._exit)
+
+        self._status = QLabel("PAINT — ☝ draw on your face")
         self._status.setObjectName("PaintHudStatus")
         self._status.setWordWrap(True)
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -38,9 +44,10 @@ class PaintHudOverlay(QWidget):
                 parts.append(f"Brush: {brush}")
             if background:
                 parts.append(f"Background: {background}")
-            self._detail.setText("  |  ".join(parts))
+            self._detail.setText("  |  ".join(parts) + "  |  ❌ X = EXIT")
+        self._exit.show()
         self.show()
         self.raise_()
 
     def set_detail(self, brush: str, background: str) -> None:
-        self._detail.setText(f"Brush: {brush}  |  Background: {background}")
+        self._detail.setText(f"Brush: {brush}  |  Background: {background}  |  ❌ X = EXIT")

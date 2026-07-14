@@ -47,7 +47,21 @@ class TextToSpeechService:
             return
         self._queue.put(text.strip())
 
+    def stop_immediately(self) -> None:
+        """Stop the current utterance and clear pending speech."""
+        if self._engine is not None:
+            try:
+                self._engine.stop()
+            except Exception:
+                logger.debug("TTS stop not supported", exc_info=True)
+        try:
+            while True:
+                self._queue.get_nowait()
+        except queue.Empty:
+            pass
+
     def shutdown(self) -> None:
+        self.stop_immediately()
         if not self._running:
             return
         self._queue.put(None)

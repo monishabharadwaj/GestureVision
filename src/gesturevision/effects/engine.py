@@ -7,7 +7,7 @@ import threading
 import time
 from typing import Any
 
-from gesturevision.core.types import BGRImage, EffectContext, GestureType, QualityTier
+from gesturevision.core.types import BGRImage, EffectContext, GestureType, HandResult, QualityTier
 from gesturevision.effects.base import BaseEffect
 from gesturevision.effects.interactive.base import InteractiveEffect
 from gesturevision.effects.registry import build_effects_from_config
@@ -131,6 +131,32 @@ class EffectEngine:
             return brush.cycle_brush_type()
         return "neon"
 
+    def cycle_brush_ink(self) -> tuple[str, tuple[int, int, int]]:
+        from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
+
+        brush = self._effects.get("brush")
+        if isinstance(brush, VirtualBrushEffect):
+            return brush.cycle_ink_color()
+        return "neon_pink", (255, 80, 255)
+
+    def cycle_brush_background(self) -> str:
+        from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
+
+        brush = self._effects.get("brush")
+        if isinstance(brush, VirtualBrushEffect):
+            return brush.cycle_background_filter()
+        return "original"
+
+    def clear_brush_canvas(self) -> None:
+        from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
+
+        brush = self._effects.get("brush")
+        if isinstance(brush, VirtualBrushEffect):
+            brush.clear_canvas()
+            return
+        if isinstance(brush, InteractiveEffect):
+            brush.reset()
+
     def place_brush_sticker(self, position: tuple[int, int] | None) -> str:
         from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
 
@@ -138,11 +164,6 @@ class EffectEngine:
         if isinstance(brush, VirtualBrushEffect):
             return brush.place_sticker(position)
         return ""
-
-    def clear_brush_canvas(self) -> None:
-        brush = self._effects.get("brush")
-        if isinstance(brush, InteractiveEffect):
-            brush.reset()
 
     def set_reveal_overlay(self, effect_name: str) -> None:
         from gesturevision.effects.interactive.image_reveal import ImageRevealEffect
@@ -162,6 +183,7 @@ class EffectEngine:
         pixel_position: tuple[int, int] | None = None,
         active_gesture: GestureType = GestureType.UNKNOWN,
         pinch_strength: float = 0.0,
+        hands: list[HandResult] | None = None,
         extra_params: dict[str, Any] | None = None,
     ) -> BGRImage:
         """Apply the active effect and return the processed frame."""
@@ -186,6 +208,7 @@ class EffectEngine:
             pinch_strength=pinch_strength,
             params=params,
             quality=quality,
+            hands=list(hands or []),
         )
         result = effect.apply(ctx)
         self._last_apply_ms = (time.perf_counter() - start) * 1000.0

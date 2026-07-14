@@ -165,12 +165,18 @@ class AccessibilityOnboardingDialog(QDialog):
         self._resolved = True
         self._selected = profile
         self._timer.stop()
-        if profile == AccessibilityProfile.BEAUTY:
+        if profile == AccessibilityProfile.DANDELION:
+            self._stop_audio()
+            self._status_label.setText("DANDELION MODE — visual only, no sound")
+        elif profile == AccessibilityProfile.BEAUTY:
             self._status_label.setText("BEAUTY MODE — starting camera")
-            self._tts.speak(
-                "Beauty mode activated. Starting camera now. Show your hand when you hear camera started."
-            )
+            self._tts.shutdown()
         self.accept()
+
+    def _stop_audio(self) -> None:
+        """Silence TTS immediately — deaf users chose visual mode."""
+        self._tts.stop_immediately()
+        self._tts.shutdown()
 
     def _listen_for_beauty(self) -> None:
         try:
@@ -207,5 +213,8 @@ class AccessibilityOnboardingDialog(QDialog):
                 continue
 
     def closeEvent(self, event) -> None:  # noqa: N802
-        self._tts.shutdown()
+        if self._selected == AccessibilityProfile.DANDELION:
+            self._stop_audio()
+        else:
+            self._tts.shutdown()
         super().closeEvent(event)

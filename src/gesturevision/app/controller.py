@@ -17,6 +17,7 @@ from gesturevision.accessibility.gesture_menu import GestureMenuController
 from gesturevision.accessibility.next_step_guide import GuideState, next_step_message
 from gesturevision.accessibility.profile_config import ProfileSettings
 from gesturevision.accessibility.touch_navigation import TouchNavigator, zones_from_app_ids
+from gesturevision.accessibility.picture_cards import card_for_action, card_for_gesture
 from gesturevision.camera.capture import CameraCapture
 from gesturevision.camera.capture_thread import CaptureThread
 from gesturevision.core.events import DomainEvent, EventBus, EventType
@@ -58,7 +59,10 @@ class PipelineController(QObject):
     menu_changed = pyqtSignal(list, int)  # labels, active_index
     menu_closed = pyqtSignal()
     next_step_changed = pyqtSignal(str)
-    touch_hover = pyqtSignal(str)
+    touch_hover = pyqtSignal(str, float)  # app_id, dwell progress 0–1
+    toast_requested = pyqtSignal(str, str)  # message, kind: error|success|info
+    gesture_flash = pyqtSignal(str, str)  # gesture name, action label
+    picture_highlight = pyqtSignal(str)
     dialogue_updated = pyqtSignal(str, str, str)  # agent_text, user_text, detail_text
     paint_mode_changed = pyqtSignal(bool)
     paint_feedback_changed = pyqtSignal(str, str, str)  # message, brush, background
@@ -112,6 +116,7 @@ class PipelineController(QObject):
         self._guide = GuideState()
         self._conversation = ConversationManager()
         self._hands_visible = False
+        self._dual_hands_visible = False
         self._running = False
         self._latest_frame: ProcessedFrame | None = None
 
@@ -263,12 +268,7 @@ class PipelineController(QObject):
             return
 
         if command_id == "original":
-            self.set_active_effect("original")
-            self.effect_switch_requested.emit("original")
-            self._guide.brush_mode = False
-            self._guide.menu_open = False
-            self.menu_closed.emit()
-            self.status_changed.emit("Back to live camera view")
+            self._exit_paint_mode()
             self._guide.last_voice = ""
             self._update_next_step()
             return
@@ -286,25 +286,29 @@ class PipelineController(QObject):
         if self._profile_settings.profile != AccessibilityProfile.DANDELION:
             return
         if self.active_effect == "brush":
-            self.touch_hover.emit("")
+            self.touch_hover.emit("", 0.0)
             return
         if not self._touch.zones or processed.finger_position is None:
-            self.touch_hover.emit("")
+            self.touch_hover.emit("", 0.0)
             return
 
         norm_x, norm_y = processed.finger_position
         pointing = processed.active_gesture == GestureType.INDEX_FINGER
         pinching = processed.active_gesture == GestureType.PINCH
+        finger_active = bool(processed.hands)
         hover, tap = self._touch.update(
             norm_x,
             norm_y,
             pointing=pointing,
             pinching=pinching,
+            finger_active=finger_active,
         )
-        self.touch_hover.emit(hover or "")
+        progress = self._touch.dwell_progress()
+        self.touch_hover.emit(hover or "", progress)
         if tap:
-            self._handle_launch(tap, processed)
-            self.status_changed.emit(f"Touched {tap}")
+            label = self._handle_launch(tap, processed)
+            self.status_changed.emit(f"Opening {label}…")
+            self._guide.conversation_hint = f"Opened {label}"
             self._update_next_step()
 
     def _blank_frame(self) -> ProcessedFrame:
@@ -325,16 +329,51 @@ class PipelineController(QObject):
         self.paint_mode_changed.emit(True)
         self._guide.brush_mode = True
         self._guide.menu_open = False
-        self._guide.conversation_hint = ""
+        self._guide.conversation_hint = self._paint_mode_hint()
         self.menu_closed.emit()
         self._effect_engine.set_brush_background("original")
         self._effect_engine.set_brush_type("neon")
         self.status_changed.emit(
-            "Paint studio — point index finger at your face to draw. "
-            "Peace = movie sketch. Rock = movie edge. OK = 3D brush. "
-            "Thumbs up = 3D object. Fist = clear."
+            "PAINT — ☝ draw  |  ❌ CROSS FINGERS = EXIT  |  👊 clear"
         )
         self._update_next_step()
+
+    def _exit_paint_mode(self) -> None:
+        if self.active_effect != "brush":
+            self._menu.close()
+            self._guide.menu_open = False
+            self.menu_closed.emit()
+            self.status_changed.emit("Live mode")
+            self._guide.conversation_hint = self._live_mode_hint()
+            self._update_next_step()
+            return
+        self.set_active_effect("original")
+        self.effect_switch_requested.emit("original")
+        self.paint_mode_changed.emit(False)
+        self._guide.brush_mode = False
+        self._guide.menu_open = False
+        self.menu_closed.emit()
+        self.status_changed.emit(
+            "LIVE MODE — 🤘 music  |  ✌ learn  |  👌 ask  |  👍 paint  |  ☝ touch bar"
+        )
+        self._guide.conversation_hint = self._live_mode_hint()
+        self._update_next_step()
+
+    def _live_mode_hint(self) -> str:
+        return (
+            "LIVE → 🤘 YouTube music  |  ✌ learn  |  👌 ask  |  "
+            "👍 paint studio  |  ☝ touch bar  |  🙌 two hands = 3D mesh"
+        )
+
+    def _paint_mode_hint(self) -> str:
+        hints = self._profile_settings.paint_gesture_hints
+        if hints:
+            parts = [f"{name.replace('_', ' ')}: {text}" for name, text in hints.items()]
+            return "PAINT → " + "  |  ".join(parts[:4])
+        return (
+            "PAINT → ☝ draw  |  ✌ sketch  |  🤘 edge  |  👌 brush  |  "
+            "👍 3D  |  🤏 size  |  👊 exit"
+        )
 
     def _update_next_step(self) -> None:
         self._guide.brush_mode = self.active_effect == "brush"
@@ -366,6 +405,7 @@ class PipelineController(QObject):
                 effect_engine=self._effect_engine,
                 mirror_preview=bool(self._configs["app"].get("mirror_preview", True)),
                 fps_counter=FpsCounter(),
+                auto_hand_mesh=self._profile_settings.auto_hand_mesh,
             )
 
             self._camera.start()
@@ -481,7 +521,15 @@ class PipelineController(QObject):
             if command is not None:
                 self._execute_action(command, processed)
 
+        if processed.active_gesture == GestureType.PINCH and self.active_effect == "brush":
+            if self._profile_settings.profile == AccessibilityProfile.DANDELION:
+                self.adjust_effect_parameter("active.strength", processed.pinch_strength)
+                self._paint_feedback(f"Brush size {processed.pinch_strength:.0%}")
+            return
+
         if processed.active_gesture in (GestureType.INDEX_FINGER, GestureType.PINCH):
+            if self.active_effect != "brush" and processed.active_gesture == GestureType.PINCH:
+                return
             command = self._gesture_router.route_continuous(
                 processed.active_gesture,
                 hand,
@@ -498,13 +546,22 @@ class PipelineController(QObject):
             return False
 
         gesture = processed.action_event.gesture if processed.action_event else GestureType.UNKNOWN
+        if gesture == GestureType.X_SIGN:
+            self.status_changed.emit("Painting done — back to live")
+            self._exit_paint_mode()
+            return True
         if gesture == GestureType.PEACE:
-            self._effect_engine.set_brush_background("sketch")
-            self._paint_feedback("Movie sketch ON — draw with index finger", brush=None, background="Sketch")
+            background = self._effect_engine.cycle_brush_background()
+            labels = {"original": "Live camera", "sketch": "Movie sketch", "edge": "Movie edge"}
+            label = labels.get(background, background.title())
+            self._paint_feedback(f"Background: {label}", background=label)
+            self.gesture_flash.emit("Peace", label)
             return True
         if gesture == GestureType.ROCK_SIGN:
-            self._effect_engine.set_brush_background("edge")
-            self._paint_feedback("Movie edge ON — draw with index finger", brush=None, background="Edge")
+            ink_name, _color = self._effect_engine.cycle_brush_ink()
+            display = ink_name.replace("_", " ").title()
+            self._paint_feedback(f"Ink: {display}")
+            self.gesture_flash.emit("Rock Sign", display)
             return True
         if gesture == GestureType.OK_SIGN:
             brush_type = self._effect_engine.cycle_brush_type()
@@ -516,18 +573,20 @@ class PipelineController(QObject):
             }
             label = labels.get(brush_type, brush_type)
             self._paint_feedback(f"Brush: {label}", brush=label)
+            self.gesture_flash.emit("OK Sign", label)
             return True
         if gesture == GestureType.THUMBS_UP:
             sticker = self._effect_engine.place_brush_sticker(processed.pixel_position)
             if sticker:
                 self._paint_feedback(f"Placed 3D {sticker} — keep drawing with index finger")
+                self.gesture_flash.emit("Thumbs Up", f"3D {sticker}")
             else:
                 self._paint_feedback("Point index finger where you want the 3D object")
             return True
         if gesture == GestureType.CLOSED_FIST:
             self._effect_engine.clear_brush_canvas()
-            self._effect_engine.set_brush_background("original")
-            self._paint_feedback("Canvas cleared — live camera restored", background="Live camera")
+            self._paint_feedback("Canvas cleared — keep painting", background="Live camera")
+            self.gesture_flash.emit("Fist", "Clear canvas")
             return True
         return False
 
@@ -607,6 +666,12 @@ class PipelineController(QObject):
             extra_label = self._start_free_chat()
             self.status_changed.emit(extra_label)
             self._guide.conversation_hint = "SPEAK what you want — music, learn, or open an app"
+        elif command.action == ActionType.ENTER_PAINT_MODE:
+            self._enter_brush_mode()
+            extra_label = "Paint studio"
+        elif command.action == ActionType.EXIT_PAINT_MODE:
+            self._exit_paint_mode()
+            extra_label = "Live mode"
         elif command.action == ActionType.OPEN_MENU:
             label = self._menu.open_menu()
             self._guide.menu_open = True
@@ -662,6 +727,8 @@ class PipelineController(QObject):
                 ActionType.START_MUSIC_CHAT,
                 ActionType.START_LEARN_CHAT,
                 ActionType.START_FREE_CHAT,
+                ActionType.ENTER_PAINT_MODE,
+                ActionType.EXIT_PAINT_MODE,
                 ActionType.LAUNCH_APP,
                 ActionType.MENU_SELECT,
             }:
@@ -677,6 +744,10 @@ class PipelineController(QObject):
                 command.action.value,
                 command.gesture.value,
             )
+            gesture_label = command.gesture.value.replace("_", " ").title()
+            action_label = extra_label or command.action.value.replace("_", " ").title()
+            self.gesture_flash.emit(gesture_label, action_label)
+            self._emit_picture_highlight(command.gesture.value, command.action.value, command.target)
             self._guide.last_voice = ""
             self._update_next_step()
 
@@ -688,7 +759,7 @@ class PipelineController(QObject):
         label: str | None = None,
     ) -> str:
         normalized = app_id.strip().lower()
-        if normalized == "brush":
+        if normalized in {"brush", "paint"}:
             self._enter_brush_mode()
             return "Paint"
 
@@ -700,11 +771,14 @@ class PipelineController(QObject):
         try:
             launched = launch_app(normalized, self._profile_settings.apps)
             self.status_changed.emit(f"Opening {launched}")
+            self.toast_requested.emit(f"Opened {launched}", "success")
             return label or launched
         except Exception as exc:
-            message = f"Could not open {normalized}: {exc}"
-            logger.error(message)
+            friendly = normalized.title()
+            message = f"Could not open {friendly} — check browser or app settings"
+            logger.error("Launch failed for %s: %s", normalized, exc)
             self.status_changed.emit(message)
+            self.toast_requested.emit(message, "error")
             return normalized
 
     def _publish_hand_events(self, processed: ProcessedFrame) -> None:
@@ -715,6 +789,23 @@ class PipelineController(QObject):
         elif not has_hands and self._hands_visible:
             self._hands_visible = False
             self._event_bus.publish(DomainEvent(type=EventType.HAND_LOST, payload={}))
+
+        dual = len(processed.hands) >= 2
+        if (
+            dual
+            and not self._dual_hands_visible
+            and self._profile_settings.auto_hand_mesh
+            and processed.active_effect == "original"
+        ):
+            self._dual_hands_visible = True
+            self._guide.conversation_hint = "3D MESH — fingertips connected between both hands"
+            self.picture_highlight.emit("mesh")
+            self._update_next_step()
+        elif not dual and self._dual_hands_visible:
+            self._dual_hands_visible = False
+            if self._guide.conversation_hint.startswith("3D MESH"):
+                self._guide.conversation_hint = self._live_mode_hint()
+                self._update_next_step()
 
         if processed.active_gesture != GestureType.UNKNOWN:
             label = processed.active_gesture.value.replace("_", " ")
@@ -740,6 +831,16 @@ class PipelineController(QObject):
                 },
             )
         )
+
+    def _emit_picture_highlight(
+        self,
+        gesture: str,
+        action: str,
+        target: str | None,
+    ) -> None:
+        card = card_for_action(action, target) or card_for_gesture(gesture)
+        if card is not None:
+            self.picture_highlight.emit(card.card_id)
 
     def _emit_frame(self, processed: ProcessedFrame) -> None:
         qimage = bgr_to_qimage(processed.image)

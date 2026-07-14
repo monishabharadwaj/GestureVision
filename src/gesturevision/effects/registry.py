@@ -10,6 +10,7 @@ from gesturevision.effects.classical.blur import BlurEffect
 from gesturevision.effects.classical.edge import EdgeEffect
 from gesturevision.effects.classical.original import OriginalEffect
 from gesturevision.effects.classical.sketch import SketchEffect
+from gesturevision.effects.interactive.hand_mesh import HandMeshEffect
 from gesturevision.effects.interactive.image_reveal import ImageRevealEffect
 from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
 
@@ -25,6 +26,7 @@ _CLASSICAL_EFFECTS: dict[str, type[BaseEffect]] = {
 _INTERACTIVE_EFFECTS: dict[str, type[BaseEffect]] = {
     "brush": VirtualBrushEffect,
     "reveal": ImageRevealEffect,
+    "hand_mesh": HandMeshEffect,
 }
 
 

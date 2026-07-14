@@ -32,11 +32,11 @@ def next_step_message(state: GuideState) -> str:
 
     if state.brush_mode:
         return (
-            "PAINT STUDIO → ☝ draw on your face  |  ✌ movie sketch  |  🤘 movie edge  |  "
-            "👌 change 3D brush  |  👍 drop 3D object  |  🤏 brush size  |  ✊ clear"
+            "PAINT → ☝ draw  |  👌 brush  |  🤘 ink  |  ✌ background  |  "
+            "👍 3D  |  🤏 size  |  ✊ clear  |  ❌ X done"
         )
 
     return (
-        "NEXT → POINT finger at TOUCH BAR below, hold or pinch to tap  |  "
-        "SAY: play music, open youtube, open chrome, paint"
+        "LIVE → 🤘 YouTube music  |  ✌ learn  |  👌 ask  |  "
+        "👍 paint studio  |  ☝ touch bar (hold to open)"
     )

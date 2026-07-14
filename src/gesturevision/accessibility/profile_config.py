@@ -25,10 +25,13 @@ class ProfileSettings:
     welcome: str = ""
     reduced_effects: list[str] = field(default_factory=list)
     gesture_mappings: dict[str, Any] = field(default_factory=dict)
+    paint_gesture_hints: dict[str, str] = field(default_factory=dict)
     gesture_menu: list[str] = field(default_factory=list)
     touch_bar: list[str] = field(default_factory=list)
     apps: dict[str, Any] = field(default_factory=dict)
     auto_start_camera: bool = False
+    auto_hand_mesh: bool = False
+    picture_mode: bool = False
     messages: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -65,9 +68,12 @@ def load_profile_settings(
         welcome=str(entry.get("welcome", "")),
         reduced_effects=[str(name) for name in entry.get("reduced_effects", [])],
         gesture_mappings=dict(entry.get("gestures", {})),
+        paint_gesture_hints=dict(entry.get("paint_gestures", {})),
         gesture_menu=[str(item) for item in entry.get("gesture_menu", [])],
         touch_bar=[str(item) for item in entry.get("touch_bar", entry.get("gesture_menu", []))],
         apps=apps,
         auto_start_camera=bool(entry.get("auto_start_camera", False)),
+        auto_hand_mesh=bool(entry.get("auto_hand_mesh", False)),
+        picture_mode=bool(entry.get("picture_mode", False)),
         messages=messages,
     )

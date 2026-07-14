@@ -25,6 +25,9 @@ def message_for_event(
 
     if event.type == EventType.GESTURE_DETECTED:
         gesture = str(event.payload.get("gesture", ""))
+        # Continuous pointing/pinching must not spam captions.
+        if gesture in {"index_finger", "pinch"}:
+            return None
         return str(gestures.get(gesture, gesture.replace("_", " ").title()))
 
     if event.type == EventType.ACTION_TRIGGERED:
@@ -63,6 +66,10 @@ def message_for_event(
             return str(actions.get("start_learn_chat", "What do you want to learn?"))
         if action == ActionType.START_FREE_CHAT.value:
             return str(actions.get("start_free_chat", "Tell me what you want"))
+        if action == ActionType.ENTER_PAINT_MODE.value:
+            return str(actions.get("enter_paint_mode", "Paint studio"))
+        if action == ActionType.EXIT_PAINT_MODE.value:
+            return str(actions.get("exit_paint_mode", "Live mode"))
         if action == "conversation":
             return str(event.payload.get("label", ""))
         return None

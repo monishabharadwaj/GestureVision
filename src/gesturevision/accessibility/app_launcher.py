@@ -33,7 +33,7 @@ def launch_app(app_id: str, apps_config: dict[str, Any]) -> str:
     normalized = app_id.strip().lower()
     apps = apps_config.get("apps", apps_config)
 
-    if normalized == "brush":
+    if normalized in {"brush", "paint"}:
         return "Paint"
 
     entry = apps.get(normalized, {})

@@ -3,6 +3,7 @@ camera:
   width: 1280
   height: 720
   fps: 30
-  backend: "default"  # default | dshow | msmf | v4l2
+  backend: "dshow"  # Windows: dshow is more stable than msmf/default
   auto_reconnect: true
   reconnect_delay_ms: 1000
+  failures_before_reconnect: 20

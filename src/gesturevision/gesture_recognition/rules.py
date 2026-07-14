@@ -45,11 +45,13 @@ def _load_rules() -> None:
         pinch,
         rock_sign,
         thumbs_up,
+        x_sign,
     )
 
     for module in (
         ok_sign,
         pinch,
+        x_sign,
         peace,
         rock_sign,
         thumbs_up,

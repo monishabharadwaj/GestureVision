@@ -187,9 +187,11 @@ class MainWindow(QMainWindow):
                 for app_id in touch_ids
             ]
             self.video_widget.set_touch_targets(targets)
-            self.video_widget.set_next_step(
-                "NEXT → Point at TOUCH BAR below and hold  |  SAY: play music, open youtube, open chrome"
-            )
+            self.video_widget.set_picture_mode(self._profile_settings.picture_mode)
+            if not self._profile_settings.picture_mode:
+                self.video_widget.set_next_step(
+                    "LIVE MODE → 🤘 music  |  ✌ learn  |  👌 ask  |  👍 paint  |  ☝ touch bar (hold)"
+                )
 
         if self._profile_settings.profile in {
             AccessibilityProfile.BEAUTY,
@@ -226,6 +228,7 @@ class MainWindow(QMainWindow):
         self._pipeline.frame_ready.connect(self._on_frame_ready)
         self._pipeline.status_changed.connect(self._on_status_changed)
         self._pipeline.gesture_changed.connect(self.status_bar.set_gesture)
+        self._pipeline.gesture_changed.connect(self._on_gesture_display)
         self._pipeline.effect_switch_requested.connect(self._on_gesture_effect_switch)
         self._pipeline.parameter_changed.connect(self._on_parameter_changed)
         self._pipeline.screenshot_captured.connect(self._on_screenshot_captured)
@@ -234,7 +237,10 @@ class MainWindow(QMainWindow):
         self._pipeline.menu_changed.connect(self._on_menu_changed)
         self._pipeline.menu_closed.connect(self.video_widget.hide_menu)
         self._pipeline.next_step_changed.connect(self.video_widget.set_next_step)
-        self._pipeline.touch_hover.connect(self.video_widget.set_touch_hover)
+        self._pipeline.touch_hover.connect(self._on_touch_hover)
+        self._pipeline.toast_requested.connect(self._on_toast)
+        self._pipeline.gesture_flash.connect(self.video_widget.flash_gesture)
+        self._pipeline.picture_highlight.connect(self.video_widget.highlight_picture)
         self._pipeline.dialogue_updated.connect(self._on_dialogue_updated)
         self._pipeline.paint_mode_changed.connect(self._on_paint_mode_changed)
         self._pipeline.paint_feedback_changed.connect(self._on_paint_feedback)
@@ -242,6 +248,25 @@ class MainWindow(QMainWindow):
         if self._voice_commands is not None:
             self._voice_commands.command_recognized.connect(self._on_voice_command)
             self._voice_commands.heard_text.connect(self._on_voice_heard)
+
+    def _on_gesture_display(self, label: str) -> None:
+        if self._profile_settings.picture_mode:
+            self.video_widget.highlight_pose(label)
+
+    def _on_touch_hover(self, app_id: str, progress: float) -> None:
+        self.video_widget.set_touch_hover(app_id, progress)
+        if app_id and self._profile_settings.picture_mode:
+            from gesturevision.accessibility.picture_cards import APP_CARDS
+
+            card = APP_CARDS.get(app_id.strip().lower())
+            if card is not None:
+                self.video_widget.highlight_picture(card.card_id)
+
+    def _on_toast(self, message: str, kind: str) -> None:
+        if self._profile_settings.visual_captions or kind == "error":
+            self.video_widget.show_toast(message, kind)
+        if kind == "error" and self._feedback_manager is not None:
+            self._feedback_manager.announce(message)
 
     def _on_voice_command(self, command_id: str, spoken_text: str) -> None:
         if self._pipeline.conversation_active():
@@ -276,9 +301,11 @@ class MainWindow(QMainWindow):
         self.video_widget.set_paint_mode(active)
         if active and self._profile_settings.profile == AccessibilityProfile.DANDELION:
             self.sidebar.select_effect("brush")
-            self.sidebar.brush_controls.setVisible(True)
+            self.sidebar.brush_controls.setVisible(False)
+            self.sidebar.show_dandelion_paint_hints()
         elif self._profile_settings.profile == AccessibilityProfile.DANDELION:
             self.sidebar.brush_controls.setVisible(False)
+            self.sidebar.show_dandelion_live_hints()
 
     def _on_menu_changed(self, labels: list, active_index: int) -> None:
         self.video_widget.show_menu(labels, active_index)
@@ -379,7 +406,7 @@ class MainWindow(QMainWindow):
             f"<b>{__app_name__}</b><br>"
             f"Version {__version__}<br><br>"
             "Real-time finger-controlled computer vision system.<br>"
-            "Phase 5 — Beauty hears everything. Dandelion sees and navigates with hands.",
+            "Phase 8 — Picture mode for non-readers. Beauty hears. Dandelion sees icons + hand poses.",
         )
 
     def shutdown(self) -> None:

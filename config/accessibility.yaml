@@ -14,7 +14,7 @@ accessibility:
     menu: ["menu", "open menu", "navigation"]
     help: ["help", "what next", "what do i do", "instructions"]
     learn: ["learn", "teach me", "explain", "what is", "i want to learn"]
-    original: ["original", "normal", "camera", "live view"]
+    original: ["original", "normal", "camera", "live view", "exit paint", "leave paint"]
 
   apps:
     chrome:
@@ -95,14 +95,17 @@ accessibility:
       hide_video: false
       simplified_ui: true
       auto_start_camera: true
+      auto_hand_mesh: true
+      picture_mode: true
       theme: "accessibility_high_contrast"
       welcome: >
-        DANDELION MODE — Camera starting.
-        SAY paint or tap PAINT to open paint studio — you will see your face and draw on it.
-        ROCK = music. PEACE = learn. OK = ask anything.
+        DANDELION PICTURE MODE — no reading needed.
+        Look at the POSE strip (hand shapes) and PICTURE board (icons).
+        🤘 = music  |  ✌ = learn  |  👌 = ask  |  👍 = paint  |  ☝ = touch  |  🙌 = 3D mesh.
       reduced_effects:
         - original
         - brush
+        - hand_mesh
       gesture_menu:
         - chrome
         - youtube
@@ -116,39 +119,47 @@ accessibility:
         - music
         - paint
         - edge
+      # LIVE MODE — navigation, music, learning (not painting)
       gestures:
         index_finger:
           action: "track_cursor"
           debounce_frames: 0
-        pinch:
-          action: "adjust_parameter"
-          target: "active.strength"
-          debounce_frames: 0
-        ok_sign:
-          action: "start_free_chat"
-          debounce_frames: 12
-        peace:
-          action: "start_learn_chat"
-          debounce_frames: 12
-        thumbs_up:
-          action: "menu_select"
-          debounce_frames: 12
-        closed_fist:
-          action: "close_menu"
-          debounce_frames: 10
         rock_sign:
           action: "start_music_chat"
-          debounce_frames: 12
+          debounce_frames: 8
+        peace:
+          action: "start_learn_chat"
+          debounce_frames: 8
+        ok_sign:
+          action: "start_free_chat"
+          debounce_frames: 8
+        thumbs_up:
+          action: "enter_paint_mode"
+          debounce_frames: 8
+        closed_fist:
+          action: "exit_paint_mode"
+          debounce_frames: 8
+      # PAINT MODE — only active inside paint studio (code override)
+      paint_gestures:
+        index_finger: "draw on your face"
+        pinch: "change brush size"
+        ok_sign: "cycle brush type (neon, 3D, sparkle, soft)"
+        rock_sign: "cycle ink color"
+        peace: "cycle background (live, sketch, edge)"
+        thumbs_up: "place 3D object"
+        closed_fist: "clear canvas"
+        x_sign: "painting done — exit to live mode"
 
   messages:
     gestures:
-      index_finger: "Pointing"
-      peace: "LEARNING — speak your topic now"
-      pinch: "Paused"
-      thumbs_up: "Selected"
-      closed_fist: "Paused"
-      ok_sign: "What do you want?"
-      rock_sign: "MUSIC — say a song name to play it"
+      index_finger: "Touch bar — point and hold"
+      peace: "LEARNING — speak your topic"
+      pinch: "Brush size"
+      thumbs_up: "PAINT studio"
+      closed_fist: "Back to live mode"
+      ok_sign: "Ask anything"
+      rock_sign: "YOUTUBE MUSIC — say a song"
+      x_sign: "Painting done"
     actions:
       switch_effect: "Switched to {target}"
       capture_screenshot: "Screenshot saved"
@@ -161,9 +172,11 @@ accessibility:
       close_menu: "Menu closed"
       speak_help: "Say what you want — music, learn, or open an app"
       speak_status: "Camera active"
-      start_music_chat: "Music mode. What song would you like?"
-      start_learn_chat: "What do you want to learn about?"
+      start_music_chat: "YouTube music — what song would you like?"
+      start_learn_chat: "Learning — what topic?"
       start_free_chat: "Tell me what you want"
+      enter_paint_mode: "Paint studio — draw on your face"
+      exit_paint_mode: "Live mode — rock=music, peace=learn, ok=ask"
     events:
       hand_acquired: "Hand detected"
       hand_lost: "Hand lost — show your hand again"

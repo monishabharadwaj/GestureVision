@@ -18,14 +18,14 @@ class TouchZone:
 
 @dataclass
 class TouchNavigator:
-    """Map finger position to on-screen zones; pinch to tap like a touchscreen."""
+    """Map finger position to on-screen zones; hold or pinch to tap like a touchscreen."""
 
     zones: list[TouchZone] = field(default_factory=list)
     hover_id: str | None = None
-    dwell_seconds: float = 0.55
+    dwell_seconds: float = 0.4
     _hover_since: float | None = None
     _last_tap_at: float = 0.0
-    tap_cooldown: float = 1.2
+    tap_cooldown: float = 0.9
 
     def zone_at(self, norm_x: float, norm_y: float) -> TouchZone | None:
         x = max(0.0, min(1.0, norm_x))
@@ -40,41 +40,52 @@ class TouchNavigator:
         norm_x: float | None,
         norm_y: float | None,
         *,
-        pointing: bool,
-        pinching: bool,
+        pointing: bool = False,
+        pinching: bool = False,
+        finger_active: bool = True,
     ) -> tuple[str | None, str | None]:
         """
         Returns (hover_app_id, tap_app_id).
-        Tap triggers on pinch while hovering, or after dwell while pointing.
+
+        Tap fires when:
+        - pinch while hovering a button, OR
+        - fingertip stays inside a button (~0.4s) — no strict gesture required
         """
-        if norm_x is None or norm_y is None:
+        if norm_x is None or norm_y is None or not finger_active:
             self.hover_id = None
             self._hover_since = None
             return None, None
 
         zone = self.zone_at(norm_x, norm_y)
         hover = zone.app_id if zone else None
-        self.hover_id = hover
 
-        now = time.perf_counter()
         if hover is None:
+            self.hover_id = None
             self._hover_since = None
             return None, None
 
-        if self._hover_since is None or self.hover_id != hover:
+        now = time.perf_counter()
+        if self.hover_id != hover:
             self._hover_since = now
+        self.hover_id = hover
 
-        tap_id: str | None = None
         if now - self._last_tap_at < self.tap_cooldown:
             return hover, None
 
         dwell_ready = (now - (self._hover_since or now)) >= self.dwell_seconds
-        if pinching or (pointing and dwell_ready):
-            tap_id = hover
+        if pinching or pointing or dwell_ready:
             self._last_tap_at = now
             self._hover_since = None
+            return hover, hover
 
-        return hover, tap_id
+        return hover, None
+
+    def dwell_progress(self) -> float:
+        """0.0–1.0 fill while finger hovers a zone (for hold-to-tap ring)."""
+        if self.hover_id is None or self._hover_since is None:
+            return 0.0
+        elapsed = time.perf_counter() - self._hover_since
+        return min(1.0, elapsed / self.dwell_seconds)
 
 
 def zones_from_app_ids(app_ids: list[str], apps: dict) -> list[TouchZone]:
@@ -93,9 +104,9 @@ def zones_from_app_ids(app_ids: list[str], apps: dict) -> list[TouchZone]:
                 app_id=app_id,
                 label=label,
                 x1=index * width,
-                y1=0.82,
+                y1=0.72,
                 x2=(index + 1) * width,
-                y2=0.98,
+                y2=0.99,
             )
         )
     return zones

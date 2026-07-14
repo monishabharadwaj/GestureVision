@@ -39,11 +39,26 @@ BEAUTY_HINTS = (
     "👌 OK — hear status",
 )
 
-DANDELION_HINTS = (
-    "👀 You SEE your camera — paint shows your face",
-    "🎨 SAY paint or tap PAINT on touch bar",
-    "☝ Index finger draws  |  ✌ sketch  |  🤘 edge  |  👌 3D brush",
-    "👍 Thumbs up drops 3D object  |  🤏 Pinch changes brush size",
+DANDELION_LIVE_HINTS = (
+    "PICTURE MODE — icons + hand poses, no reading",
+    "🤘 Rock = 🎵 music",
+    "✌ Peace = 📚 learn",
+    "👌 OK = 💬 ask",
+    "👍 Thumbs up = 🎨 paint",
+    "☝ Index = 👆 touch bar",
+    "🙌 Two hands = 3D mesh",
+    "👊 Fist = 🔙 back to live",
+)
+
+DANDELION_PAINT_HINTS = (
+    "PAINT — ❌ CROSS FINGERS (X) anytime to EXIT",
+    "☝ Index = Draw on your face",
+    "👌 OK = Next brush",
+    "🤘 Rock = Next ink color",
+    "✌ Peace = Next background",
+    "👍 Thumbs up = Place 3D object",
+    "🤏 Pinch = Brush size",
+    "✊ Fist = Clear canvas",
 )
 
 
@@ -72,7 +87,7 @@ class Sidebar(QFrame):
         brand.setObjectName("BrandLabel")
         layout.addWidget(brand)
 
-        phase = QLabel("AI  ·  Phase 5")
+        phase = QLabel("AI  ·  Phase 8")
         phase.setObjectName("PhaseBadge")
         layout.addWidget(phase)
 
@@ -151,12 +166,12 @@ class Sidebar(QFrame):
                 if internal in allowed:
                     QListWidgetItem(display, self.effects_list)
             self.effects_list.setCurrentRow(0)
-            hints = DANDELION_HINTS if is_dandelion else BEAUTY_HINTS
+            hints = DANDELION_LIVE_HINTS if is_dandelion else BEAUTY_HINTS
         elif simplified:
             item = QListWidgetItem("Gesture navigation active")
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.effects_list.addItem(item)
-            hints = DANDELION_HINTS if is_dandelion else BEAUTY_HINTS
+            hints = DANDELION_LIVE_HINTS if is_dandelion else BEAUTY_HINTS
         else:
             for display, internal in EFFECT_ITEMS:
                 if display is None:
@@ -177,6 +192,19 @@ class Sidebar(QFrame):
         self.brush_controls.setVisible(False)
         self.reveal_controls.setVisible(False)
         self._block_signals = False
+
+    def show_dandelion_live_hints(self) -> None:
+        self._apply_hint_list(DANDELION_LIVE_HINTS)
+
+    def show_dandelion_paint_hints(self) -> None:
+        self._apply_hint_list(DANDELION_PAINT_HINTS)
+
+    def _apply_hint_list(self, hints: tuple[str, ...]) -> None:
+        for label, text in zip(self._gesture_labels, hints, strict=False):
+            label.setText(text)
+            label.setVisible(True)
+        for label in self._gesture_labels[len(hints) :]:
+            label.hide()
 
     def select_effect(self, effect_name: str) -> None:
         """Programmatically select an effect without re-emitting the signal."""
@@ -202,5 +230,5 @@ class Sidebar(QFrame):
                 return
 
     def _update_tool_panels(self, effect_name: str) -> None:
-        self.brush_controls.setVisible(effect_name == "brush")
+        self.brush_controls.setVisible(False)
         self.reveal_controls.setVisible(effect_name == "reveal")

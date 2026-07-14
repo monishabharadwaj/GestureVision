@@ -39,6 +39,16 @@ effects:
         feather_width: 48
         min_feather: 16
         max_feather: 140
+    - name: "hand_mesh"
+      type: "interactive"
+      enabled: true
+      realtime: true
+      params:
+        line_color: [80, 200, 120]
+        tip_color: [0, 220, 255]
+        bridge_color: [255, 180, 60]
+        z_scale: 30
+        mesh_fill_alpha: 0.18
     - name: "cartoon"
       type: "classical"
       enabled: false
