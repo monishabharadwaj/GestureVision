@@ -1,0 +1,124 @@
+/* GestureVision AI — Dark Theme (Phase 0) */
+
+* {
+    font-family: "Segoe UI", "Cascadia Sans", "Helvetica Neue", sans-serif;
+    font-size: 13px;
+}
+
+QMainWindow {
+    background-color: #12141a;
+    color: #e8eaed;
+}
+
+QWidget {
+    background-color: transparent;
+    color: #e8eaed;
+}
+
+QFrame#Sidebar {
+    background-color: #1a1d26;
+    border-right: 1px solid #2a2f3a;
+}
+
+QFrame#Toolbar {
+    background-color: #1a1d26;
+    border-bottom: 1px solid #2a2f3a;
+}
+
+QFrame#StatusBarFrame {
+    background-color: #0e1015;
+    border-top: 1px solid #2a2f3a;
+}
+
+QLabel#BrandLabel {
+    color: #f0f2f5;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+QLabel#PhaseBadge {
+    color: #8b93a7;
+    font-size: 11px;
+}
+
+QLabel#StatusLabel {
+    color: #a0a8b8;
+    font-size: 12px;
+}
+
+QLabel#MutedLabel {
+    color: #6b7385;
+    font-size: 12px;
+}
+
+QLabel#VideoPlaceholder {
+    color: #5a6275;
+    font-size: 15px;
+    background-color: #0a0c10;
+    border: 1px solid #2a2f3a;
+}
+
+QPushButton {
+    background-color: #252a36;
+    color: #e8eaed;
+    border: 1px solid #343b4a;
+    border-radius: 4px;
+    padding: 6px 14px;
+    min-height: 20px;
+}
+
+QPushButton:hover {
+    background-color: #2e3442;
+    border-color: #4a5266;
+}
+
+QPushButton:pressed {
+    background-color: #1e222c;
+}
+
+QPushButton:disabled {
+    color: #5a6275;
+    background-color: #1a1d26;
+    border-color: #2a2f3a;
+}
+
+QPushButton#PrimaryButton {
+    background-color: #3d7eff;
+    border-color: #3d7eff;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+QPushButton#PrimaryButton:hover {
+    background-color: #5a91ff;
+    border-color: #5a91ff;
+}
+
+QListWidget {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    color: #c4c9d4;
+}
+
+QListWidget::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 2px 8px;
+}
+
+QListWidget::item:selected {
+    background-color: #252a36;
+    color: #ffffff;
+}
+
+QListWidget::item:hover {
+    background-color: #22262f;
+}
+
+QStatusBar {
+    background-color: #0e1015;
+    color: #8b93a7;
+    border-top: 1px solid #2a2f3a;
+}

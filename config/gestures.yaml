@@ -1,0 +1,43 @@
+hand_tracking:
+  max_num_hands: 2
+  min_detection_confidence: 0.6
+  min_tracking_confidence: 0.5
+  model_complexity: 1
+  tracking_resolution:
+    width: 640
+    height: 480
+  smoothing:
+    enabled: true
+    alpha: 0.4
+
+gestures:
+  debounce_frames: 8
+  min_confidence: 0.7
+  dominant_hand: "Right"  # Left | Right | Auto
+
+  mappings:
+    index_finger:
+      action: "track_cursor"
+      debounce_frames: 0
+    peace:
+      action: "switch_effect"
+      target: "sketch"
+      debounce_frames: 10
+    pinch:
+      action: "adjust_parameter"
+      target: "active.strength"
+      debounce_frames: 0
+    thumbs_up:
+      action: "capture_screenshot"
+      debounce_frames: 15
+    closed_fist:
+      action: "toggle_pause"
+      debounce_frames: 12
+    ok_sign:
+      action: "switch_effect"
+      target: "original"
+      debounce_frames: 10
+    rock_sign:
+      action: "switch_effect"
+      target: "edge"
+      debounce_frames: 10

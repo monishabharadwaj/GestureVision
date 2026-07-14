@@ -1,0 +1,65 @@
+effects:
+  default: "original"
+  quality_tier: "preview"  # preview | full
+
+  registry:
+    - name: "original"
+      type: "classical"
+      enabled: true
+      realtime: true
+    - name: "sketch"
+      type: "classical"
+      enabled: true
+      realtime: true
+    - name: "blur"
+      type: "classical"
+      enabled: true
+      realtime: true
+      params:
+        strength: 7
+    - name: "edge"
+      type: "classical"
+      enabled: true
+      realtime: true
+    - name: "brush"
+      type: "interactive"
+      enabled: true
+      realtime: true
+      params:
+        brush_type: "neon"
+        brush_radius: 16
+        neon_color: [255, 80, 255]
+        glow_intensity: 1.35
+    - name: "reveal"
+      type: "interactive"
+      enabled: true
+      realtime: true
+      params:
+        overlay_effect: "sketch"
+        feather_width: 48
+        min_feather: 16
+        max_feather: 140
+    - name: "cartoon"
+      type: "classical"
+      enabled: false
+      realtime: false
+    - name: "pixel"
+      type: "classical"
+      enabled: false
+      realtime: true
+    - name: "thermal"
+      type: "classical"
+      enabled: false
+      realtime: true
+    - name: "vintage"
+      type: "classical"
+      enabled: false
+      realtime: true
+    - name: "negative"
+      type: "classical"
+      enabled: false
+      realtime: true
+    - name: "oil_painting"
+      type: "classical"
+      enabled: false
+      realtime: false

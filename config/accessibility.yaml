@@ -1,0 +1,175 @@
+accessibility:
+  default_profile: "dandelion"
+  voice_listen_seconds: 15
+  beauty_listen_seconds: 30
+  voice_trigger_words: ["beauty", "i am beauty", "i'm beauty", "beauty mode"]
+
+  voice_commands:
+    chrome: ["chrome", "open chrome", "google", "open google", "browser"]
+    edge: ["edge", "open edge", "microsoft edge"]
+    firefox: ["firefox", "open firefox", "mozilla"]
+    youtube: ["youtube", "open youtube", "you tube", "play youtube", "video"]
+    music: ["music", "play music", "song", "spotify", "play song"]
+    paint: ["paint", "brush", "open paint", "drawing", "draw"]
+    menu: ["menu", "open menu", "navigation"]
+    help: ["help", "what next", "what do i do", "instructions"]
+    learn: ["learn", "teach me", "explain", "what is", "i want to learn"]
+    original: ["original", "normal", "camera", "live view"]
+
+  apps:
+    chrome:
+      label: "Chrome"
+      url: "https://www.google.com"
+    edge:
+      label: "Edge"
+      url: "https://www.microsoft.com/edge"
+    firefox:
+      label: "Firefox"
+      url: "https://www.mozilla.org/firefox"
+    youtube:
+      label: "YouTube"
+      url: "https://www.youtube.com"
+    music:
+      label: "Music"
+      url: "https://www.youtube.com"
+
+  onboarding:
+    spoken_prompt: >
+      Welcome to GestureVision.
+      If you cannot see the screen, say Beauty now.
+      Your camera will start automatically.
+    dandelion_title: "DANDELION — Visual Mode (for deaf users)"
+    dandelion_instructions: >
+      You CAN see this screen.
+      Click ENTER DANDELION MODE or wait for countdown.
+      The app will show large text — no sound needed.
+      You can also speak what you want.
+    dandelion_button: "ENTER DANDELION MODE"
+    beauty_hint: "Blind users: say BEAUTY aloud — no clicking needed"
+
+  profiles:
+    beauty:
+      display_name: "Beauty"
+      subtitle: "Audio-only — hear everything, speak back"
+      tts_enabled: true
+      visual_captions: false
+      audio_only: true
+      hide_video: true
+      simplified_ui: true
+      auto_start_camera: true
+      theme: "accessibility_high_contrast"
+      welcome: >
+        Beauty mode. Camera starting.
+        Rock sign for music — say the song and it plays directly.
+        Peace sign to learn — I will explain out loud.
+        OK sign for anything else.
+        Pinch or fist pauses. Thumbs up saves a photo.
+      reduced_effects: []
+      gestures:
+        thumbs_up:
+          action: "capture_screenshot"
+          debounce_frames: 15
+        closed_fist:
+          action: "toggle_pause"
+          debounce_frames: 12
+        pinch:
+          action: "toggle_pause"
+          debounce_frames: 10
+        rock_sign:
+          action: "start_music_chat"
+          debounce_frames: 12
+        peace:
+          action: "start_learn_chat"
+          debounce_frames: 12
+        ok_sign:
+          action: "start_free_chat"
+          debounce_frames: 12
+
+    dandelion:
+      display_name: "Dandelion"
+      subtitle: "Visual mode — read, speak, touch, gestures"
+      tts_enabled: false
+      visual_captions: true
+      caption_duration_ms: 6000
+      audio_only: false
+      hide_video: false
+      simplified_ui: true
+      auto_start_camera: true
+      theme: "accessibility_high_contrast"
+      welcome: >
+        DANDELION MODE — Camera starting.
+        READ the text boxes on screen. SPEAK your answers.
+        ROCK = say a song name → it plays directly.
+        PEACE = say a topic → READ the lesson text that appears.
+        OK = ask anything. Touch bar at bottom for apps.
+      reduced_effects:
+        - original
+        - brush
+      gesture_menu:
+        - chrome
+        - youtube
+        - edge
+        - firefox
+        - music
+        - paint
+      touch_bar:
+        - chrome
+        - youtube
+        - music
+        - paint
+        - edge
+      gestures:
+        index_finger:
+          action: "track_cursor"
+          debounce_frames: 0
+        pinch:
+          action: "adjust_parameter"
+          target: "active.strength"
+          debounce_frames: 0
+        ok_sign:
+          action: "start_free_chat"
+          debounce_frames: 12
+        peace:
+          action: "start_learn_chat"
+          debounce_frames: 12
+        thumbs_up:
+          action: "menu_select"
+          debounce_frames: 12
+        closed_fist:
+          action: "close_menu"
+          debounce_frames: 10
+        rock_sign:
+          action: "start_music_chat"
+          debounce_frames: 12
+
+  messages:
+    gestures:
+      index_finger: "Pointing"
+      peace: "LEARNING — speak your topic now"
+      pinch: "Paused"
+      thumbs_up: "Selected"
+      closed_fist: "Paused"
+      ok_sign: "What do you want?"
+      rock_sign: "MUSIC — say a song name to play it"
+    actions:
+      switch_effect: "Switched to {target}"
+      capture_screenshot: "Screenshot saved"
+      toggle_pause: "Paused. Show fist or pinch again to resume."
+      adjust_parameter: "Brush size changed"
+      launch_app: "Opening {target}"
+      open_menu: "Menu open"
+      menu_next: "Next: {target}"
+      menu_select: "Opening {target}"
+      close_menu: "Menu closed"
+      speak_help: "Say what you want — music, learn, or open an app"
+      speak_status: "Camera active"
+      start_music_chat: "Music mode. What song would you like?"
+      start_learn_chat: "What do you want to learn about?"
+      start_free_chat: "Tell me what you want"
+    events:
+      hand_acquired: "Hand detected"
+      hand_lost: "Hand lost — show your hand again"
+      camera_started: "Camera started"
+      camera_stopped: "Camera stopped"
+      resumed: "Resumed"
+      effect_changed: "Now using {effect}"

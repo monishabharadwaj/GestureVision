@@ -1,0 +1,10 @@
+# GestureVision AI — Phase 0 dependencies
+opencv-python>=4.8
+mediapipe>=0.10
+numpy>=1.24
+PyQt6>=6.5
+PyYAML>=6.0
+
+# Dev / test
+pytest>=7.4
+pytest-qt>=4.2

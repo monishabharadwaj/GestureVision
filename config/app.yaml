@@ -1,0 +1,25 @@
+app:
+  name: "GestureVision AI"
+  version: "0.1.0"
+  organization: "GestureVision"
+  mirror_preview: true
+  theme: "dark"
+  window:
+    width: 1280
+    height: 720
+    min_width: 960
+    min_height: 540
+
+paths:
+  assets: "assets"
+  themes: "assets/themes"
+  models: "assets/models"
+  logs: "logs"
+  recordings: "recordings"
+  screenshots: "screenshots"
+
+performance:
+  target_fps: 30
+  max_pipeline_ms: 33.0
+  ring_buffer_size: 3
+  drop_stale_frames: true
