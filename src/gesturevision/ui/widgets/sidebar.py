@@ -40,11 +40,10 @@ BEAUTY_HINTS = (
 )
 
 DANDELION_HINTS = (
-    "👀 You SEE everything — read the banners",
-    "🎤 SAY anything: play music, open youtube, open chrome",
-    "👆 TOUCH BAR — point finger at bottom, hold to tap",
-    "👌 OK sign — open hand menu",
-    "✌ Peace — next item  |  👍 Thumbs up — open",
+    "👀 You SEE your camera — paint shows your face",
+    "🎨 SAY paint or tap PAINT on touch bar",
+    "☝ Index finger draws  |  ✌ sketch  |  🤘 edge  |  👌 3D brush",
+    "👍 Thumbs up drops 3D object  |  🤏 Pinch changes brush size",
 )
 
 

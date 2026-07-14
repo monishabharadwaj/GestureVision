@@ -31,7 +31,10 @@ def next_step_message(state: GuideState) -> str:
         return f"NEXT → ✌ Peace = next  |  👍 Thumbs up = OPEN {target.upper()}  |  ✊ Fist = close"
 
     if state.brush_mode:
-        return "NEXT → ☝ Index finger = paint  |  👌 OK sign = open menu  |  Say: open chrome"
+        return (
+            "PAINT STUDIO → ☝ draw on your face  |  ✌ movie sketch  |  🤘 movie edge  |  "
+            "👌 change 3D brush  |  👍 drop 3D object  |  🤏 brush size  |  ✊ clear"
+        )
 
     return (
         "NEXT → POINT finger at TOUCH BAR below, hold or pinch to tap  |  "

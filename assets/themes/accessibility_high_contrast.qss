@@ -59,6 +59,32 @@ QLabel#MutedLabel {
     font-size: 14px;
 }
 
+QLabel#VideoFeed {
+    color: #ffffff;
+    background-color: #000000;
+    border: none;
+}
+
+QLabel#PaintHudStatus {
+    color: #ffffff;
+    background-color: #0044cc;
+    font-size: 18px;
+    font-weight: 800;
+    padding: 8px 12px;
+    border: 2px solid #ffffff;
+    border-radius: 6px;
+}
+
+QLabel#PaintHudDetail {
+    color: #000000;
+    background-color: #ffff66;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border: 2px solid #ffffff;
+    border-radius: 6px;
+}
+
 QLabel#VideoPlaceholder {
     color: #ffffff;
     font-size: 18px;

@@ -68,22 +68,22 @@ accessibility:
       gestures:
         thumbs_up:
           action: "capture_screenshot"
-          debounce_frames: 15
+          debounce_frames: 5
         closed_fist:
           action: "toggle_pause"
-          debounce_frames: 12
+          debounce_frames: 4
         pinch:
           action: "toggle_pause"
-          debounce_frames: 10
+          debounce_frames: 4
         rock_sign:
           action: "start_music_chat"
-          debounce_frames: 12
+          debounce_frames: 5
         peace:
           action: "start_learn_chat"
-          debounce_frames: 12
+          debounce_frames: 5
         ok_sign:
           action: "start_free_chat"
-          debounce_frames: 12
+          debounce_frames: 5
 
     dandelion:
       display_name: "Dandelion"
@@ -98,10 +98,8 @@ accessibility:
       theme: "accessibility_high_contrast"
       welcome: >
         DANDELION MODE — Camera starting.
-        READ the text boxes on screen. SPEAK your answers.
-        ROCK = say a song name → it plays directly.
-        PEACE = say a topic → READ the lesson text that appears.
-        OK = ask anything. Touch bar at bottom for apps.
+        SAY paint or tap PAINT to open paint studio — you will see your face and draw on it.
+        ROCK = music. PEACE = learn. OK = ask anything.
       reduced_effects:
         - original
         - brush

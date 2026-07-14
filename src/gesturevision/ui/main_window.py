@@ -236,6 +236,8 @@ class MainWindow(QMainWindow):
         self._pipeline.next_step_changed.connect(self.video_widget.set_next_step)
         self._pipeline.touch_hover.connect(self.video_widget.set_touch_hover)
         self._pipeline.dialogue_updated.connect(self._on_dialogue_updated)
+        self._pipeline.paint_mode_changed.connect(self._on_paint_mode_changed)
+        self._pipeline.paint_feedback_changed.connect(self._on_paint_feedback)
 
         if self._voice_commands is not None:
             self._voice_commands.command_recognized.connect(self._on_voice_command)
@@ -263,10 +265,20 @@ class MainWindow(QMainWindow):
     def _on_dialogue_updated(self, agent_text: str, user_text: str, detail_text: str = "") -> None:
         if not agent_text and not detail_text:
             return
+        if self._pipeline.active_effect == "brush":
+            return
         if self._profile_settings.visual_captions:
             self.video_widget.show_dialogue(agent_text, user_text, detail_text)
         elif self._profile_settings.audio_only and detail_text.strip() and self._feedback_manager:
             self._feedback_manager.announce(detail_text)
+
+    def _on_paint_mode_changed(self, active: bool) -> None:
+        self.video_widget.set_paint_mode(active)
+        if active and self._profile_settings.profile == AccessibilityProfile.DANDELION:
+            self.sidebar.select_effect("brush")
+            self.sidebar.brush_controls.setVisible(True)
+        elif self._profile_settings.profile == AccessibilityProfile.DANDELION:
+            self.sidebar.brush_controls.setVisible(False)
 
     def _on_menu_changed(self, labels: list, active_index: int) -> None:
         self.video_widget.show_menu(labels, active_index)
@@ -277,10 +289,16 @@ class MainWindow(QMainWindow):
 
     def _on_status_changed(self, message: str) -> None:
         self.status_bar.set_status(message)
+        if self._pipeline.active_effect == "brush":
+            return
         if self._profile_settings.visual_captions and self._profile_settings.is_accessibility_mode:
             self.video_widget.show_caption(message, self._profile_settings.caption_duration_ms)
         if self._profile_settings.audio_only and self._feedback_manager is not None:
             self._feedback_manager.announce(message)
+
+    def _on_paint_feedback(self, message: str, brush: str, background: str) -> None:
+        if self._profile_settings.profile == AccessibilityProfile.DANDELION:
+            self.video_widget.show_paint_feedback(message, brush=brush, background=background)
 
     def _on_start_camera(self) -> None:
         try:

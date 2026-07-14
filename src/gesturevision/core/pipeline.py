@@ -97,7 +97,8 @@ class FramePipeline:
         effect_ms = (time.perf_counter() - effect_start) * 1000.0
 
         output = effected.copy()
-        if hands:
+        hide_landmarks = self._effect_engine.active_effect == "brush"
+        if hands and not hide_landmarks:
             draw_hand_landmarks(output, hands)
         if debounce_result.display_gesture in (
             GestureType.INDEX_FINGER,

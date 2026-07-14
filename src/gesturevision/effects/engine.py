@@ -116,6 +116,34 @@ class EffectEngine:
         if isinstance(brush, VirtualBrushEffect):
             brush.set_color(bgr)
 
+    def set_brush_background(self, filter_name: str) -> None:
+        from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
+
+        brush = self._effects.get("brush")
+        if isinstance(brush, VirtualBrushEffect):
+            brush.set_background_filter(filter_name)
+
+    def cycle_brush_type(self) -> str:
+        from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
+
+        brush = self._effects.get("brush")
+        if isinstance(brush, VirtualBrushEffect):
+            return brush.cycle_brush_type()
+        return "neon"
+
+    def place_brush_sticker(self, position: tuple[int, int] | None) -> str:
+        from gesturevision.effects.interactive.virtual_brush import VirtualBrushEffect
+
+        brush = self._effects.get("brush")
+        if isinstance(brush, VirtualBrushEffect):
+            return brush.place_sticker(position)
+        return ""
+
+    def clear_brush_canvas(self) -> None:
+        brush = self._effects.get("brush")
+        if isinstance(brush, InteractiveEffect):
+            brush.reset()
+
     def set_reveal_overlay(self, effect_name: str) -> None:
         from gesturevision.effects.interactive.image_reveal import ImageRevealEffect
 

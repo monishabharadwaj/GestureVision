@@ -60,6 +60,8 @@ class PipelineController(QObject):
     next_step_changed = pyqtSignal(str)
     touch_hover = pyqtSignal(str)
     dialogue_updated = pyqtSignal(str, str, str)  # agent_text, user_text, detail_text
+    paint_mode_changed = pyqtSignal(bool)
+    paint_feedback_changed = pyqtSignal(str, str, str)  # message, brush, background
 
     def __init__(
         self,
@@ -123,7 +125,21 @@ class PipelineController(QObject):
 
     def set_active_effect(self, name: str) -> bool:
         """Switch the live effect applied to the camera feed."""
-        return self._effect_engine.set_active_effect(name)
+        was_brush = self.active_effect == "brush"
+        changed = self._effect_engine.set_active_effect(name)
+        if changed:
+            is_brush = name == "brush"
+            if was_brush != is_brush:
+                self.paint_mode_changed.emit(is_brush)
+            if is_brush:
+                self._guide.brush_mode = True
+                self._guide.conversation_hint = ""
+                if not was_brush:
+                    self._effect_engine.set_brush_background("original")
+                    self._effect_engine.set_brush_type("neon")
+            elif was_brush:
+                self._guide.brush_mode = False
+        return changed
 
     def reset_active_effect(self) -> None:
         """Clear state on the active interactive effect."""
@@ -195,7 +211,9 @@ class PipelineController(QObject):
         )
 
     def _start_music_chat(self) -> str:
-        return self._conversation.start_music()
+        prompt = self._conversation.start_music()
+        launch_url("https://www.youtube.com")
+        return prompt
 
     def _start_learn_chat(self) -> str:
         return self._conversation.start_learn()
@@ -267,6 +285,9 @@ class PipelineController(QObject):
     def _handle_touch(self, processed: ProcessedFrame) -> None:
         if self._profile_settings.profile != AccessibilityProfile.DANDELION:
             return
+        if self.active_effect == "brush":
+            self.touch_hover.emit("")
+            return
         if not self._touch.zones or processed.finger_position is None:
             self.touch_hover.emit("")
             return
@@ -301,10 +322,19 @@ class PipelineController(QObject):
     def _enter_brush_mode(self) -> None:
         self.set_active_effect("brush")
         self.effect_switch_requested.emit("brush")
+        self.paint_mode_changed.emit(True)
         self._guide.brush_mode = True
         self._guide.menu_open = False
+        self._guide.conversation_hint = ""
         self.menu_closed.emit()
-        self.status_changed.emit("Paint mode — point with index finger")
+        self._effect_engine.set_brush_background("original")
+        self._effect_engine.set_brush_type("neon")
+        self.status_changed.emit(
+            "Paint studio — point index finger at your face to draw. "
+            "Peace = movie sketch. Rock = movie edge. OK = 3D brush. "
+            "Thumbs up = 3D object. Fist = clear."
+        )
+        self._update_next_step()
 
     def _update_next_step(self) -> None:
         self._guide.brush_mode = self.active_effect == "brush"
@@ -442,6 +472,8 @@ class PipelineController(QObject):
         hand = processed.hands[0].handedness if processed.hands else "Right"
 
         if processed.action_event is not None:
+            if self._try_paint_studio_gesture(processed):
+                return
             command = self._gesture_router.route(
                 processed.action_event,
                 pinch_strength=processed.pinch_strength,
@@ -457,6 +489,68 @@ class PipelineController(QObject):
             )
             if command is not None and command.action in CONTINUOUS_ACTIONS:
                 self._execute_action(command, processed, continuous=True)
+
+    def _try_paint_studio_gesture(self, processed: ProcessedFrame) -> bool:
+        """Dandelion paint studio — gestures switch movie looks and 3D objects."""
+        if self.active_effect != "brush":
+            return False
+        if self._profile_settings.profile != AccessibilityProfile.DANDELION:
+            return False
+
+        gesture = processed.action_event.gesture if processed.action_event else GestureType.UNKNOWN
+        if gesture == GestureType.PEACE:
+            self._effect_engine.set_brush_background("sketch")
+            self._paint_feedback("Movie sketch ON — draw with index finger", brush=None, background="Sketch")
+            return True
+        if gesture == GestureType.ROCK_SIGN:
+            self._effect_engine.set_brush_background("edge")
+            self._paint_feedback("Movie edge ON — draw with index finger", brush=None, background="Edge")
+            return True
+        if gesture == GestureType.OK_SIGN:
+            brush_type = self._effect_engine.cycle_brush_type()
+            labels = {
+                "neon": "Neon glow",
+                "tube3d": "3D tube",
+                "sparkle": "Sparkle",
+                "soft": "Soft paint",
+            }
+            label = labels.get(brush_type, brush_type)
+            self._paint_feedback(f"Brush: {label}", brush=label)
+            return True
+        if gesture == GestureType.THUMBS_UP:
+            sticker = self._effect_engine.place_brush_sticker(processed.pixel_position)
+            if sticker:
+                self._paint_feedback(f"Placed 3D {sticker} — keep drawing with index finger")
+            else:
+                self._paint_feedback("Point index finger where you want the 3D object")
+            return True
+        if gesture == GestureType.CLOSED_FIST:
+            self._effect_engine.clear_brush_canvas()
+            self._effect_engine.set_brush_background("original")
+            self._paint_feedback("Canvas cleared — live camera restored", background="Live camera")
+            return True
+        return False
+
+    def _paint_feedback(
+        self,
+        message: str,
+        *,
+        brush: str | None = None,
+        background: str | None = None,
+    ) -> None:
+        self.status_changed.emit(message)
+        current_brush = brush
+        current_bg = background
+        if current_brush is None or current_bg is None:
+            effect = self._effect_engine.get_effect("brush")
+            if effect is not None:
+                params = effect.params
+                if current_brush is None:
+                    current_brush = str(params.get("brush_type", "neon")).replace("tube3d", "3D tube").title()
+                if current_bg is None:
+                    current_bg = str(params.get("background_filter", "original")).replace("original", "Live camera").title()
+        self.paint_feedback_changed.emit(message, current_brush or "Neon", current_bg or "Live camera")
+        self._update_next_step()
 
     def _execute_action(
         self,

@@ -67,7 +67,40 @@ def test_virtual_brush_tube3d_style() -> None:
     assert not np.array_equal(result, _frame())
 
 
-def test_virtual_brush_custom_color() -> None:
+def test_virtual_brush_movie_sketch_background() -> None:
+    effect = VirtualBrushEffect({"brush_type": "neon", "background_filter": "sketch"}, _processors())
+    ctx = EffectContext(
+        frame=_frame(),
+        finger_position=(0.5, 0.5),
+        pixel_position=(40, 50),
+        active_gesture=GestureType.INDEX_FINGER,
+        drawing=True,
+        pinch_strength=0.0,
+        params=effect.params,
+        quality="preview",
+    )
+    result = effect.apply(ctx)
+    assert result.shape == (100, 160, 3)
+    assert float(result.mean()) > 0.0
+
+
+def test_virtual_brush_places_3d_sticker() -> None:
+    effect = VirtualBrushEffect({"brush_type": "tube3d"}, _processors())
+    sticker = effect.place_sticker((80, 50))
+    assert sticker == "sphere"
+    ctx = EffectContext(
+        frame=_frame(),
+        finger_position=None,
+        pixel_position=None,
+        active_gesture=GestureType.UNKNOWN,
+        drawing=False,
+        pinch_strength=0.0,
+        params=effect.params,
+        quality="preview",
+    )
+    result = effect.apply(ctx)
+    assert float(result[50, 80].mean()) > 0.0
+
     effect = VirtualBrushEffect(processors=_processors())
     effect.set_color((0, 255, 255))
     assert effect.params["neon_color"] == (0, 255, 255)
